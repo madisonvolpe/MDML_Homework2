@@ -1,0 +1,170 @@
+---
+title: 'MDML: Homework2'
+author: "Madison Volpe"
+date: "10/3/2018"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Question 1: Logistic regression applied to voting
+
+##1a: Download and explore the exit poll data, poll_data.tsv, available at NYU classes in the web page for this assignment.
+
+```{r}
+library(data.table)
+poll<-as.data.frame(fread(file.choose()))
+poll <- data.frame(apply(poll,2,function(x) factor(x)))
+```
+
+##1b: Build a logistic regression model to estimate people's probability of voting for Obama in the 2008 presidential election using all the features in the dataset. If you are not using RMarkdown, you should provide separate written answers in to parts i), ii), and iv) as a pdf, as well as an R script of your code.
+
+    +**Model:**
+    
+    ```{r}
+    poll$vote_2008 <- relevel(poll$vote_2008, ref = "john mcCain")
+    levels(poll$vote_2008)
+    summary(glm(vote_2008~.,data = poll, family = "binomial"))
+    ```
+
+    +**i: List the coefficients for each age group and gender; if your model does not fit all these coefficients, explain why not.** **Answer:** The coefficient for sexmale is -.023, for age30-44 is -.345, for age45-64 is -.409, and for age65+ is -.346. The state_contestedness is dropped due to multicollinearity. 
+    
+    +**ii:Provide a summary of the model. What is your interpretation of these values?** **Answer:** Males are associated with a decrease in the log odds of voting for Barack Obama by .023 units compared to Females. Age 30-44 are associated with a decrease in the log odds of voting for Barack Obama by .345 units compared to Age 18-29. Age 45-64 are associated with a decrease in the log odds of voting for Barack Obama by .409 units compared to Age 18-29. Age 65+ are associated with a decreased in the log odds of voting for Barack Obama by .346 units compared to Age 18-29. 
+    
+    +**iii: Convert the probabilistic predictions for each individual into binary predictions, based on the candidate they are most likely to vote for. Compute accuracy,precision, and recall for your predictions. Don’t use any package that automatically computes these values!**
+    
+    ```{r}
+    #probabilistic predictions into binary predictions
+    f1 <- glm(vote_2008~.,data = poll, family = "binomial")
+    predicted <- predict(f1, type = "response")
+    binarypredictions <- ifelse(predicted > .5, "Obama", "McCain")
+    table(binarypredictions)
+    
+    #accuracy
+    confusion_matrix <- table(binarypredictions, poll$vote_2008)
+    (confusion_matrix[1,1]+confusion_matrix[2,2])/sum(confusion_matrix)
+    
+    #precision 
+   (5119)/(823+5119)
+    
+    #recall
+    5119/(5119+600)
+    ```
+    
+    **Answer:** The accuracy is .8577, precision is .861, and recall is .895
+  
+    +**iv: Repeat step iii), but now convert each individual’s prediction to a binary prediction for Obama only if the individual’s probability of voting for Obama is at least 70%. What differences do you see in accuracy, precision, and recall compared to step iii)?** 
+    
+    ```{r}
+    binarypredictions_new <- ifelse(predicted > .7, "Obama", "McCain")
+    table(binarypredictions_new)
+    
+    #accuracy
+    confusion_matrix_new <- table(binarypredictions_new, poll$vote_2008)
+    (confusion_matrix_new[1,1]+confusion_matrix_new[2,2])/sum(confusion_matrix)
+    
+    #precision 
+   (4410)/(4410+398)
+    
+    #recall
+    (4410)/(4410+1309)
+    ```
+    
+    **Answer:** The accuracy is now .8293, the precision is .9172, and the recall is .7711. The accuracy and recall decreased and precision increased. 
+    
+
+## 1c: Not everyone votes for major party candidates in elections, so a binary prediction isn’t always the best approach for predicting votes. Download and explore the revised exit poll data, poll_data_full.tsv, available at NYU classes in the web page for this assignment (this dataset includes individuals who voted ‘other’). If you are not using RMarkdown, you should provide separate written answers in to parts i), iii), and iv) as a pdf, as well as an R script of your code.
+
+### 1ci: 
+
+```{r}
+#read in data 
+poll_full <- as.data.frame(fread(file.choose()))
+
+#mutate with if_else to make democrat + republican =1 for major party, other = 0 
+poll_full$MajorParty <- ifelse(poll_full$vote_2008 == "other", 0, 1)
+
+#factor 
+poll_full$MajorParty <- factor(poll_full$MajorParty)
+```
+
+```{r}
+library(MASS)
+
+bigmodel <- glm(MajorParty~.-vote_2008, data = poll_full, family = "binomial")
+
+# summary(stepAIC(bigmodel, scope = list(lower = ~1, upper = ~ .^2), direction = "both"))
+
+# finalmodel <-glm(formula = MajorParty ~ sex + race + party + ideology + party:ideology + 
+#     race:party + sex:race + sex:party, family = "binomial", data = poll_full)
+```
+
+```{r}
+summary(finalmodel)
+```
+
+```{r}
+# #Make a histogram of the resulting predicted probabilities using ggplot2
+# predicted <- predict(finalmodel, type = "response")
+# predicted <- data.frame(predicted)
+# 
+# #histogram
+# library(ggplot2)
+# ggplot(data=predicted,aes(x=predicted))+
+#   geom_histogram()+
+#   ggtitle("Histogram of Predicted Probabilities")
+
+ 
+
+predicted2 <- predict(bigmodel,type="response")
+predicted2 <- data.frame(predicted2)
+
+ggplot(data=predicted2, aes(x=predicted2))+
+  geom_histogram(color = "black", fill = "white")+
+  ggtitle("Histogram of Predicted Probabilities")+
+  labs(x="probabilities")
+```
+
+### 1cii:  Filter the revised exit poll data to only individuals who actually voted for major party candidates. On this subset, build a binary logistic regression model to predict whether an individual voted for Obama. This gives an estimate of Pr(voted Obama | voted major party candidate).
+
+```{r}
+#filtering
+library(tidyverse)
+poll_full_filter <- poll_full %>%
+  filter(MajorParty == 1)%>%
+  mutate(vote_2008 = factor(vote_2008))%>%
+  select(-MajorParty)
+```
+
+```{r}
+poll_full_filter <- data.frame(apply(poll_full_filter,2,function(x) factor(x)))
+poll_full_filter$vote_2008 <- relevel(poll_full_filter$vote_2008, ref = "john mcCain")
+levels(poll_full_filter$vote_2008)
+```
+
+```{r}
+filter_mod <- glm(vote_2008 ~., data = poll_full_filter, family = "binomial")
+```
+
+### 1ciii: Using the model from step ii), generate estimates of Pr(voted Obama | voted major party candidate) for every individual in the revised exit poll data, and make a histogram of the resulting predicted probabilities using ggplot2.
+
+```{r}
+predicted <- predict(filter_mod, type = "response")
+predicted <- data.frame(predicted)
+
+ggplot(data=predicted, aes(x=predicted))+
+  geom_histogram(color = "black", fill = "white")+
+  ggtitle("Histogram of Predicted Probabilities")+
+  labs(x="probabilities")
+```
+
+### 1civ:  Use the models from steps i) and ii) to compute, for each individual, the probability that the individual votes for: a) Obama,  b) McCain, c) Other. Generate categorical predictions for each individual based on these probabilities, and report the accuracy of your classifier.
+
+
+
+
+
+    
+  
