@@ -32,3 +32,5 @@ trump_filter$hashtag <- ifelse(grepl("#", trump_filter$text),1,0)
 X <- left_join(trump,trump_filter)
 
 #relevel NAs as 0 
+
+#HI
