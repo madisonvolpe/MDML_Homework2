@@ -34,3 +34,5 @@ X <- left_join(trump,trump_filter)
 #relevel NAs as 0 
 
 #HI
+
+#Hello, I just learned how to use git! -Bill
