@@ -220,7 +220,13 @@ check_accuracy <- function(predictions, labels, phase){
   confusion_matrix <- table(predictions, labels)
   print(confusion_matrix)
   accuracy <-  sum(diag(confusion_matrix )) / sum(confusion_matrix)
+  precision <-  confusion_matrix[2,2] / sum(confusion_matrix[2 , ] )
+  recall <-  confusion_matrix[2,2] / sum(confusion_matrix[ , 2] )
+                                                                                      
   cat("Accuracy on", phase ,"Data: ", accuracy)
+  cat("\n Precision on", phase ,"Data: ", precision)
+  cat("\n Recall on", phase ,"Data: ", recall)
+  
 }
 
 #Full Model
