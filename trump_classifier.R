@@ -333,7 +333,7 @@ nb_mod13 <- naive_bayes(x=select(train, link, quote), y=train_labels)
 pred_train_13 <- predict(nb_mod13, train)
 check_accuracy(pred_train_13, train_labels, "Training")
 #Test Data
-pred_test_13 <- predict(nb_mod11, test)
+pred_test_13 <- predict(nb_mod13, test)
 check_accuracy(pred_test_13, test_labels, "Test")
 
 
