@@ -14,6 +14,8 @@ trump$time_posted <- gsub("[^-0-9//:]", " ", trump$time_posted)
 trump$time_posted <-trimws(trump$time_posted)
 trump$time_posted <- ymd_hms(trump$time_posted)
 
+##### Part 1: Cleaning/ Features #######
+
 #Feature 1: Hour of Day 
 trump$hour <- hour(trump$time_posted)
 
@@ -35,7 +37,8 @@ trump_filter$hashtag <- ifelse(grepl("#", trump_filter$text),1,0)
 #Feature 5: Pesence of an exclamation point at the end of the tweet 
 trump_filter$ExclamationEnd <- ifelse(grepl("!$", trump_filter$text),1,0)
 
-#Feature 6: Does this tweet contain words that are associated with negative emotions? 
+#Feature 6,7,8,9: Does the tweet contain negative emotion? Does the tweet contain positive emotion?
+#Number of positive words in the tweet? Number of negative emotions in the tweet? 
 
   #step one: We will tokenize each tweet - meaning that each word in a tweet will become its own row
   #within this step we will take out links 
@@ -54,13 +57,71 @@ trump_filter$ExclamationEnd <- ifelse(grepl("!$", trump_filter$text),1,0)
   
   #Now we have all words - excluding stop words from each tweet, time_posted will serve as an ID 
   
+  #step two: sentiment analysis- we will use the NRC Word Emotion Association Lexicon to see,
+  #which individual word in each tweet is as an emotion. The NRC is available in the tidy text package
+  #filter on 10 sentiments: positive, negative, anger, anticipation, disgust, fear, joy, sadness, suprise
+  # and trust. 
   
+    nrc <- sentiments %>% #load in nrc words and sentiments 
+      filter(lexicon == "nrc") %>%
+      dplyr::select(word, sentiment) %>%
+      filter(sentiment %in% c("trust", "positive", "joy", "fear", "negative", "sadness", "anger", "disgust", "anticipation", 
+                              "surprise"))
 
+  #step three: join nrc and tweet_words 
+    
+    Sentiments <- inner_join(tweet_words, nrc, by = "word") 
+    
+  # 
+    positive_sent <- c("trust", "positive", "joy", "anticipation", "surprise")
+    negative_sent <- c("fear", "negative", "sadness", "anger", "disgust")
+    
+    Sentiments$Positive <- ifelse(is.element(Sentiments$sentiment, positive_sent), 1, 0)
+    Sentiments$Negative <- ifelse(is.element(Sentiments$sentiment, negative_sent), 1, 0)
 
+  #IDs with positive emotions 
+    PositiveIDs <- unique(Sentiments[Sentiments$Positive==1,2])
+  #IDs with negative emotions 
+    NegativeIDs <- unique(Sentiments[Sentiments$Negative==1,2])
 
-#Join trump to trump_filter
-X <- left_join(trump,trump_filter)
+  #Assigning Positive and Negative Emotions per Tweet 
+    trump_filter$Positive <- ifelse(is.element(trump_filter$time_posted, PositiveIDs),1, 0)
+    trump_filter$Negative <- ifelse(is.element(trump_filter$time_posted, NegativeIDs),1, 0)
+  
+  #Counts 
+    SentimentsCount <- Sentiments %>%
+    group_by(source, time_posted) %>%
+    summarise(NumberPositiveEmotions = sum(Positive), NumberNegativeEmotions = sum(Negative))
+    
+  #Assigning Counts of Positive and Negative Emotions per Tweet 
+    trump_filter <- full_join(trump_filter, SentimentsCount)
+    
+  #For counts, if 0 - then no emotion associated so we can make NAs 0 
+    trump_filter<- trump_filter %>%
+      mutate(NumberPositiveEmotions = ifelse(is.na(NumberPositiveEmotions),0, NumberPositiveEmotions),
+             NumberNegativeEmotions = ifelse(is.na(NumberNegativeEmotions),0, NumberNegativeEmotions))
+    
+    trump_filter %>%
+      group_by(source)%>%
+      summarise(PositiveEmotions = sum(NumberPositiveEmotions), NegativeEmotions = sum(NumberNegativeEmotions), 
+                PercentNeg = NegativeEmotions/sum(NegativeEmotions+PositiveEmotions),
+                PercentPos = PositiveEmotions/sum(PositiveEmotions+NegativeEmotions))
 
-#relevel NAs as 0 
+#Final dataset 
+    
+    #note - that trump_filter only examined tweets written by trump and his staff
+    #we will code NAs as 0 - because they do not pertain to staff or trump - so
+    #they do not have any of the features 
+
+    trump <- left_join(trump,trump_filter)
+
+    #relevel NAs as 0 
+    
+    trump <- data.frame(apply(trump, 2, function(x){ ifelse(is.na(x), 0, x)}))
+    
+    #check 
+    
+    sum(is.na(trump))
+    
 
 
