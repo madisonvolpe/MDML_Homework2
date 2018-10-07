@@ -14,31 +14,31 @@ trump$time_posted <- gsub("[^-0-9//:]", " ", trump$time_posted)
 trump$time_posted <-trimws(trump$time_posted)
 trump$time_posted <- ymd_hms(trump$time_posted)
 
-##### Part 1: Cleaning/ Features #######
+##### Part 1: Cleaning/ Features #####
 
-#Feature 1: Hour of Day 
-trump$hour <- hour(trump$time_posted)
+  #Feature 1: Hour of Day 
+  trump$hour <- hour(trump$time_posted)
 
-#Important Note - if 1- means has feature, if 0 - means does not have feature! 
+  #Important Note - if 1- means has feature, if 0 - means does not have feature! 
 
-#Feature 2: Start with Quotation Mark 
-trump$quote <- ifelse(grepl('^"',trump$text), 1, 0) #if it begins with a quotation mark 1, if not then 0
+  #Feature 2: Start with Quotation Mark 
+  trump$quote <- ifelse(grepl('^"',trump$text), 1, 0) #if it begins with a quotation mark 1, if not then 0
 
-#Filtering out non Trump or non staff language 
-trump_filter <- trump%>%
+  #Filtering out non Trump or non staff language 
+  trump_filter <- trump%>%
   filter(quote==0)
 
-#Feature 3: Contains a Link/ Picture 
-trump_filter$link <- ifelse(grepl("t.co",trump_filter$text), 1,0) #in the article he uses t.co 
+  #Feature 3: Contains a Link/ Picture 
+  trump_filter$link <- ifelse(grepl("t.co",trump_filter$text), 1,0) #in the article he uses t.co 
 
-#Feature 4: Presence of a hastag 
-trump_filter$hashtag <- ifelse(grepl("#", trump_filter$text),1,0)
+  #Feature 4: Presence of a hastag 
+  trump_filter$hashtag <- ifelse(grepl("#", trump_filter$text),1,0)
 
-#Feature 5: Pesence of an exclamation point at the end of the tweet 
-trump_filter$ExclamationEnd <- ifelse(grepl("!$", trump_filter$text),1,0)
+  #Feature 5: Pesence of an exclamation point at the end of the tweet 
+  trump_filter$ExclamationEnd <- ifelse(grepl("!$", trump_filter$text),1,0)
 
-#Feature 6,7,8,9: Does the tweet contain negative emotion? Does the tweet contain positive emotion?
-#Number of positive words in the tweet? Number of negative emotions in the tweet? 
+  #Feature 6,7,8,9: Does the tweet contain negative emotion? Does the tweet contain positive emotion?
+  #Number of positive words in the tweet? Number of negative emotions in the tweet? 
 
   #step one: We will tokenize each tweet - meaning that each word in a tweet will become its own row
   #within this step we will take out links 
@@ -122,6 +122,27 @@ trump_filter$ExclamationEnd <- ifelse(grepl("!$", trump_filter$text),1,0)
     #check 
     
     sum(is.na(trump))
+
+#clean work space#
     
+    rm(nrc,Sentiments, SentimentsCount, tweet_words)
+
+##### Part 2: Dividing Data into Training and Test Set ##### 
+    
+    # rename the label, make it a factor, and shuffle the data
+    trump <- trump %>% mutate(label = as.factor(source)) %>% select(-source) %>% slice(sample(1:n())) #shuffle data
+    
+    #training dataset 
+    split_size = .8*nrow(trump) #splits size  - we want it to be 80%
+    train <- trump %>% slice(1:split_size) #first half 
+    train_labels <- train$label
+    train <- train %>% select(-label)#drops labels 
+    
+    #test dataset
+    test <- trump %>% slice(split_size+1:n()) #splits size - we want it to be 20% 
+    test_labels <- test$label
+    test <- test %>% select(-label)
+
+
 
 
