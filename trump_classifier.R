@@ -1,4 +1,5 @@
 #Loading necessary packages 
+
 library(data.table)
 library(lubridate)
 library(dplyr)
@@ -6,6 +7,7 @@ library(tidytext) #may have to download this if you do not have it
 library(stringr)
 library(naivebayes)
 library(ggplot2)
+
 #Read in Data 
 trump <- as.data.frame(fread("trump_data.tsv", header = FALSE))
 names(trump) <- c("source", "time_posted", "text")
@@ -132,7 +134,6 @@ trump$time_posted <- ymd_hms(trump$time_posted)
     #trump <- as.data.frame(apply(trump, 2, function(x){ ifelse(is.na(x)==T, 0, x)}))
     
     trump <-trump %>% mutate_all(function(x){ ifelse(is.na(x)==T, 0, x)})
-    'Note: I changed this because the previous code was creating 3 levels'
     
 
     #check 
@@ -271,13 +272,13 @@ check_accuracy(pred_train_4, train_labels, "Training")
 #Test
 pred_test_4 <- predict(nb_mod4, test)
 check_accuracy(pred_test_4, test_labels, "Test")
-'
-It looks like we should definitely keep links.
-'
+
+#looks like we should definitely keep links
+#I agree-Madison
 
 #Model 5: Drop  Positive Emotions
-no_positive <- select(train, -text, -time_posted, -capitalized, -hour
-                      -NumberPositiveEmotions, -Positive )
+no_positive <- select(train, -text, -time_posted, -capitalized, -hour,
+                      -NumberPositiveEmotions, -Positive)
 nb_mod5 <- naive_bayes(x=no_positive, y=train_labels )
 #Training Data
 pred_train_5 <- predict(nb_mod5, train)
@@ -288,7 +289,7 @@ check_accuracy(pred_test_5, test_labels, "Training")
 
 
 #Model 6: Drop  Negative Emotions
-no_negative <- select(train, -text, -time_posted, -capitalized, -hour
+no_negative <- select(train, -text, -time_posted, -capitalized, -hour,
                       -NumberPositiveEmotions, -Positive, -Negative, - NumberNegativeEmotions )
 nb_mod6 <- naive_bayes(x=no_negative, y=train_labels )
 #Training Data
@@ -316,7 +317,8 @@ check_accuracy(pred_train_8, train_labels, "Training")
 #Test Data
 pred_test_8 <- predict(nb_mod8, test)
 check_accuracy(pred_test_8, test_labels, "Test")
-'It looks like we should keep hashtag. '
+
+#It looks like we should keep hashtag
 
 
 #Model 9: Drop Quote
@@ -344,8 +346,6 @@ check_accuracy(pred_train_11, train_labels, "Training")
 #Test Data
 pred_test_11 <- predict(nb_mod11, test)
 check_accuracy(pred_test_11, test_labels, "Test")
-
-
 
 
 #Best Models
