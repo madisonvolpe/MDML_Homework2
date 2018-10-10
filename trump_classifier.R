@@ -239,6 +239,7 @@ check_accuracy(pred_train_1, train_labels, "Training")
 #Test
 pred_test_1 <- predict(nb_mod, test)
 check_accuracy(pred_test_1, test_labels, "Test")
+#Accuracy on Test Data:  0.8629032
 
 
 #Model 2: Drop All Caps Field 
@@ -250,6 +251,8 @@ check_accuracy(pred_train_2, train_labels, "Training")
 #Test
 pred_test_2 <- predict(nb_mod2, test)
 check_accuracy(pred_test_2, test_labels, "Test")
+#Accuracy on Test Data:  0.8629032
+
 
 #Model 3: Drop Time 
 no_time <- select(train, -text, -time_posted, -capitalized, -hour)
@@ -261,7 +264,7 @@ check_accuracy(pred_train_3, train_labels, "Training")
 #Test
 pred_test_3 <- predict(nb_mod3, test)
 check_accuracy(pred_test_3, test_labels, "Test")
-
+#Accuracy on Test Data:  0.8629032s
 
 #Model 4: Drop  Links 
 no_links <- select(train, -text, -time_posted, -capitalized, -hour, -link)
@@ -272,6 +275,7 @@ check_accuracy(pred_train_4, train_labels, "Training")
 #Test
 pred_test_4 <- predict(nb_mod4, test)
 check_accuracy(pred_test_4, test_labels, "Test")
+#Accuracy on Test Data:  0.8145161
 
 #looks like we should definitely keep links
 #I agree-Madison
@@ -286,7 +290,7 @@ check_accuracy(pred_train_5, train_labels, "Training")
 #Test Data
 pred_test_5 <- predict(nb_mod5, test)
 check_accuracy(pred_test_5, test_labels, "Training")
-
+#Accuracy on Training Data:  0.8629032
 
 #Model 6: Drop  Negative Emotions
 no_negative <- select(train, -text, -time_posted, -capitalized, -hour,
@@ -298,6 +302,7 @@ check_accuracy(pred_train_6, train_labels, "Training")
 #Test Data
 pred_test_6 <- predict(nb_mod6, test)
 check_accuracy(pred_test_6, test_labels, "Test")
+#Accuracy on Test Data:  0.8629032
 
 #Model 7: Drop Exclamation Point
 no_exclamation <- select(train, link, hashtag, quote)
@@ -308,6 +313,7 @@ check_accuracy(pred_train_7, train_labels, "Training")
 #Test Data
 pred_test_7 <- predict(nb_mod7, test)
 check_accuracy(pred_test_7, test_labels, "Test")
+#Accuracy on Test Data:  0.8629032
 
 #Model 8: Drop Hashtag
 drop_hash <- select(train, quote,  link)
@@ -317,8 +323,9 @@ check_accuracy(pred_train_8, train_labels, "Training")
 #Test Data
 pred_test_8 <- predict(nb_mod8, test)
 check_accuracy(pred_test_8, test_labels, "Test")
+#Accuracy on Test Data:  0.8427419
 
-#It looks like we should keep hashtag
+#NOTE: It looks like we should keep hashtag
 
 
 #Model 9: Drop Quote
@@ -329,6 +336,8 @@ check_accuracy(pred_train_9, train_labels, "Training")
 #Test Data
 pred_test_9 <- predict(nb_mod9, test)
 check_accuracy(pred_test_9, test_labels, "Test")
+#Accuracy on Test Data:  0.8629032
+
 
 #Model  With Link and Quote
 nb_mod13 <- naive_bayes(x=select(train, link, quote), y=train_labels)
@@ -337,7 +346,7 @@ check_accuracy(pred_train_13, train_labels, "Training")
 #Test Data
 pred_test_13 <- predict(nb_mod13, test)
 check_accuracy(pred_test_13, test_labels, "Test")
-
+#Accuracy on Test Data:  0.8427419
 
 #Model with Hashtag and Quote
 nb_mod11 <- naive_bayes(x=select(train, hashtag,  quote), y=train_labels)
@@ -346,7 +355,7 @@ check_accuracy(pred_train_11, train_labels, "Training")
 #Test Data
 pred_test_11 <- predict(nb_mod11, test)
 check_accuracy(pred_test_11, test_labels, "Test")
-
+#Accuracy on Test Data:  0.7822581
 
 #Best Models
 
@@ -360,6 +369,8 @@ check_accuracy(pred_train_10, train_labels, "Training")
 #Test Data
 pred_test_10 <- predict(nb_mod10, test)
 check_accuracy(pred_test_10, test_labels, "Test")
+#Accuracy on Test Data:  0.8629032
+
 
 #Model 12: Link, Quote, and Hashtag 
 nb_mod12 <- naive_bayes(x=select(train, link, quote, hashtag), y=train_labels)
@@ -368,8 +379,6 @@ check_accuracy(pred_train_12, train_labels, "Training")
 #Test Data
 pred_test_12 <- predict(nb_mod12, test)
 check_accuracy(pred_test_12, test_labels, "Test")
-
-
-
+#Accuracy on Test Data:  0.8629032
 
 
