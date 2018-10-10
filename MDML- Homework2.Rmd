@@ -7,6 +7,7 @@ output: pdf_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+library(ggplot2)
 ```
 
 # Question 1: Logistic regression applied to voting
@@ -102,7 +103,7 @@ bigmodel <- glm(MajorParty~.-vote_2008, data = poll_full, family = "binomial")
 ```
 
 ```{r}
-summary(finalmodel)
+#summary(finalmodel)
 ```
 
 ```{r}
@@ -118,12 +119,12 @@ summary(finalmodel)
 
  
 
-predicted2 <- predict(bigmodel,type="response")
-predicted2 <- data.frame(predicted2)
+prob_major_party <- predict(bigmodel,type="response")
+prob_major_party <- data.frame(prob_major_party)
 
-ggplot(data=predicted2, aes(x=predicted2))+
+ggplot(data=prob_major_party, aes(x=prob_major_party))+
   geom_histogram(color = "black", fill = "white")+
-  ggtitle("Histogram of Predicted Probabilities")+
+  ggtitle("Histogram of Predicted Probabilities of Voting for Major Party")+
   labs(x="probabilities")
 ```
 
@@ -151,12 +152,14 @@ filter_mod <- glm(vote_2008 ~., data = poll_full_filter, family = "binomial")
 ### 1ciii: Using the model from step ii), generate estimates of Pr(voted Obama | voted major party candidate) for every individual in the revised exit poll data, and make a histogram of the resulting predicted probabilities using ggplot2.
 
 ```{r}
-predicted <- predict(filter_mod, type = "response")
-predicted <- data.frame(predicted)
 
-ggplot(data=predicted, aes(x=predicted))+
+#Generate Estimates for EVERY individual 
+prob_obama_given_major_party <- predict(filter_mod, type = "response", newdata = poll_full )
+prob_obama_given_major_party<- data.frame(prob_obama_given_major_party)
+
+ggplot(data=prob_obama_given_major_party, aes(x=prob_obama_given_major_party))+
   geom_histogram(color = "black", fill = "white")+
-  ggtitle("Histogram of Predicted Probabilities")+
+  ggtitle("Histogram of Predicted Probabilities of Voting for Obama | Voted for Major Party")+
   labs(x="probabilities")
 ```
 
@@ -164,6 +167,62 @@ ggplot(data=predicted, aes(x=predicted))+
 
 
 
+##Calculate Probabilities of Voting for Obama, McCain, or Other
+```{r}
+#Prob(Obama) = Prob(Obama|Voted for Major Party)*Prob(Major Party)
+prob_obama <- prob_obama_given_major_party*prob_major_party
+
+#Prob(McCain) = Prob(McCain|Voted for Major Party)*Prob(Major Party)
+#=(1- Prob(Obama|Voted for Major Party)*Prob(Major Party)
+prob_mccain <- (1 - prob_obama_given_major_party)*prob_major_party
+
+#Prob(Other) = 1- Prob(Major Party)
+prob_other <- (1- prob_major_party)
+
+#Check that everything adds up to 1
+mean(round(prob_obama+prob_mccain+prob_other, 4) == 1)
+
+```
+
+##Generate categorical predictions for each individual based on these probabilities
+```{r}
+
+#Bind Probabilities into Dataframe
+probabilities <- data.frame(prob_obama = prob_obama,
+                            prob_mccain = prob_mccain,
+                            prob_other = prob_other)
+
+#Generate new variable of predicted vote for each individual
+#Predicted vote is based on highest probability
+probabilities <- probabilities %>% 
+  mutate(predicted_vote = as.factor(case_when(
+            prob_obama > prob_mccain &  prob_obama > prob_other ~ "barack obama",
+            prob_mccain > prob_obama & prob_mccain > prob_other ~ "john mcCain",
+            prob_other > prob_obama & prob_other > prob_mccain ~ "other"
+  )))
+
+
+#Add "other" to factor levels since there were no "other" predictions
+levels(probabilities$predicted_vote) <- c("barack obama", "john mcCain", "other")
+
+#Explore Vote Predictions
+table(probabilities$predicted_vote)
+
+```
+
+
+
+##Report the accuracy of your classifier.
+```{r}
+#Confusion Matrix
+confusion_mat_3 <- table(probabilities$predicted_vote, poll_full$vote_2008)
+confusion_mat_3
+
+#Compute Accuracy
+cat("\n Accuracy: ", sum(diag(confusion_mat_3)) / sum(confusion_mat_3))
+#84% accuracy; not too bad
+
+```
 
 
     
