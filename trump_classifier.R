@@ -300,6 +300,6 @@ FinalPredictionsLast <- ifelse(FinalPredictions == "Trump", 1, 0)
     
 #### write the csv ####
 
-write.csv(FinalPredictionsLast, "predictions.csv", row.names = FALSE)
+write.table(FinalPredictionsLast, "predictions.tsv", sep = '\t',row.names = FALSE)
 
 
